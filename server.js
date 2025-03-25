@@ -4,7 +4,9 @@ const app = express();
 
 // Initialize Firebase Admin SDK
 admin.initializeApp({
-  credential: admin.credential.cert("./service-account-key.json"),
+  credential: admin.credential.cert(
+    JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+  ),
 });
 
 app.use(express.json());
