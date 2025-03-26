@@ -2,11 +2,13 @@ const express = require("express");
 const admin = require("firebase-admin");
 const app = express();
 
-// Initialize Firebase Admin SDK
+// Fix the private key format
+const serviceAccount = JSON.parse(
+  process.env.FIREBASE_SERVICE_ACCOUNT.replace(/\\n/g, "\n")
+);
+
 admin.initializeApp({
-  credential: admin.credential.cert(
-    JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-  ),
+  credential: admin.credential.cert(serviceAccount),
 });
 
 app.use(express.json());
@@ -37,3 +39,5 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+console.log("FIREBASE_SERVICE_ACCOUNT:", process.env.FIREBASE_SERVICE_ACCOUNT);
