@@ -2,14 +2,25 @@ const express = require("express");
 const admin = require("firebase-admin");
 const app = express();
 
-// Fix the private key format
-const serviceAccount = JSON.parse(
-  process.env.FIREBASE_SERVICE_ACCOUNT.replace(/\\n/g, "\n")
-);
+// Add error checking for Firebase service account
+try {
+  // Check if environment variable exists
+  if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
+    throw new Error("FIREBASE_SERVICE_ACCOUNT environment variable is not set");
+  }
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
+  // Fix the private key format
+  const serviceAccount = JSON.parse(
+    process.env.FIREBASE_SERVICE_ACCOUNT.replace(/\\n/g, "\n")
+  );
+
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+} catch (error) {
+  console.error("Firebase initialization error:", error);
+  process.exit(1); // Exit the process if Firebase can't be initialized
+}
 
 app.use(express.json());
 
@@ -40,4 +51,8 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-console.log("FIREBASE_SERVICE_ACCOUNT:", process.env.FIREBASE_SERVICE_ACCOUNT);
+// Debugging log (can be removed in production)
+console.log(
+  "FIREBASE_SERVICE_ACCOUNT exists:",
+  !!process.env.FIREBASE_SERVICE_ACCOUNT
+);
