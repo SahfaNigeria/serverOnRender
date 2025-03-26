@@ -2,29 +2,50 @@ const express = require("express");
 const admin = require("firebase-admin");
 const app = express();
 
-// Add error checking for Firebase service account
+// Add comprehensive debugging
+console.log("Environment variables:");
+console.log(JSON.stringify(process.env, null, 2));
+
+// Comprehensive error handling for Firebase initialization
 try {
-  // Check if environment variable exists
-  if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
-    throw new Error("FIREBASE_SERVICE_ACCOUNT environment variable is not set");
+  // Explicit check and logging
+  const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT;
+
+  console.log("Raw FIREBASE_SERVICE_ACCOUNT:", serviceAccountEnv);
+  console.log("FIREBASE_SERVICE_ACCOUNT type:", typeof serviceAccountEnv);
+  console.log(
+    "FIREBASE_SERVICE_ACCOUNT length:",
+    serviceAccountEnv ? serviceAccountEnv.length : "N/A"
+  );
+
+  if (!serviceAccountEnv) {
+    throw new Error("FIREBASE_SERVICE_ACCOUNT environment variable is MISSING");
   }
 
-  // Fix the private key format
-  const serviceAccount = JSON.parse(
-    process.env.FIREBASE_SERVICE_ACCOUNT.replace(/\\n/g, "\n")
-  );
+  // Attempt to parse with more robust error handling
+  let serviceAccount;
+  try {
+    serviceAccount = JSON.parse(serviceAccountEnv.replace(/\\n/g, "\n"));
+  } catch (parseError) {
+    console.error("JSON Parsing Error:", parseError);
+    console.error("Problematic JSON string:", serviceAccountEnv);
+    throw new Error("Failed to parse FIREBASE_SERVICE_ACCOUNT JSON");
+  }
 
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
+
+  console.log("Firebase Admin initialized successfully");
 } catch (error) {
-  console.error("Firebase initialization error:", error);
-  process.exit(1); // Exit the process if Firebase can't be initialized
+  console.error("CRITICAL Firebase initialization error:", error);
+  // Optionally, you might want to exit the process
+  // process.exit(1);
 }
 
 app.use(express.json());
 
-// Endpoint to send notification to a specific user
+// Existing notification endpoint
 app.post("/send-notification", async (req, res) => {
   try {
     const { recipientToken, title, body, data } = req.body;
@@ -50,9 +71,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-
-// Debugging log (can be removed in production)
-console.log(
-  "FIREBASE_SERVICE_ACCOUNT exists:",
-  !!process.env.FIREBASE_SERVICE_ACCOUNT
-);
