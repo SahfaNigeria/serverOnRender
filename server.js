@@ -2,34 +2,57 @@ const express = require("express");
 const admin = require("firebase-admin");
 const app = express();
 
-// Add comprehensive debugging
-console.log("Environment variables:");
-console.log(JSON.stringify(process.env, null, 2));
+// Log all environment variables for debugging
+console.log("All Environment Variables:");
+Object.keys(process.env).forEach((key) => {
+  console.log(`${key}: ${process.env[key]}`);
+});
 
-// Comprehensive error handling for Firebase initialization
+// Alternative Firebase initialization
 try {
-  // Explicit check and logging
-  const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT;
+  const serviceAccount = {
+    type: process.env.FIREBASE_SERVICE_ACCOUNT_TYPE || "service_account",
+    project_id: process.env.FIREBASE_PROJECT_ID,
+    private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
+    private_key: process.env.FIREBASE_PRIVATE_KEY
+      ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n")
+      : undefined,
+    client_email: process.env.FIREBASE_CLIENT_EMAIL,
+    client_id: process.env.FIREBASE_CLIENT_ID,
+    auth_uri:
+      process.env.FIREBASE_AUTH_URI ||
+      "https://accounts.google.com/o/oauth2/auth",
+    token_uri:
+      process.env.FIREBASE_TOKEN_URI || "https://oauth2.googleapis.com/token",
+    auth_provider_x509_cert_url:
+      process.env.FIREBASE_AUTH_PROVIDER_CERT_URL ||
+      "https://www.googleapis.com/oauth2/v1/certs",
+    client_x509_cert_url: process.env.FIREBASE_CLIENT_CERT_URL,
+    universe_domain: process.env.FIREBASE_UNIVERSE_DOMAIN || "googleapis.com",
+  };
 
-  console.log("Raw FIREBASE_SERVICE_ACCOUNT:", serviceAccountEnv);
-  console.log("FIREBASE_SERVICE_ACCOUNT type:", typeof serviceAccountEnv);
   console.log(
-    "FIREBASE_SERVICE_ACCOUNT length:",
-    serviceAccountEnv ? serviceAccountEnv.length : "N/A"
+    "Constructed Service Account:",
+    JSON.stringify(serviceAccount, null, 2)
   );
 
-  if (!serviceAccountEnv) {
-    throw new Error("FIREBASE_SERVICE_ACCOUNT environment variable is MISSING");
-  }
+  // Validate required fields
+  const requiredFields = [
+    "project_id",
+    "private_key_id",
+    "client_email",
+    "private_key",
+  ];
+  const missingFields = requiredFields.filter(
+    (field) => !serviceAccount[field]
+  );
 
-  // Attempt to parse with more robust error handling
-  let serviceAccount;
-  try {
-    serviceAccount = JSON.parse(serviceAccountEnv.replace(/\\n/g, "\n"));
-  } catch (parseError) {
-    console.error("JSON Parsing Error:", parseError);
-    console.error("Problematic JSON string:", serviceAccountEnv);
-    throw new Error("Failed to parse FIREBASE_SERVICE_ACCOUNT JSON");
+  if (missingFields.length > 0) {
+    throw new Error(
+      `Missing required Firebase configuration fields: ${missingFields.join(
+        ", "
+      )}`
+    );
   }
 
   admin.initializeApp({
@@ -39,13 +62,13 @@ try {
   console.log("Firebase Admin initialized successfully");
 } catch (error) {
   console.error("CRITICAL Firebase initialization error:", error);
-  // Optionally, you might want to exit the process
+  // Uncomment the next line if you want the process to exit on initialization failure
   // process.exit(1);
 }
 
 app.use(express.json());
 
-// Existing notification endpoint
+// Your existing notification endpoint
 app.post("/send-notification", async (req, res) => {
   try {
     const { recipientToken, title, body, data } = req.body;
