@@ -17,6 +17,7 @@ try {
     private_key: process.env.FIREBASE_PRIVATE_KEY
       ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n")
       : undefined,
+
     client_email: process.env.FIREBASE_CLIENT_EMAIL,
     client_id: process.env.FIREBASE_CLIENT_ID,
     auth_uri:
@@ -34,6 +35,14 @@ try {
   console.log(
     "Constructed Service Account:",
     JSON.stringify(serviceAccount, null, 2)
+  );
+  console.log("FIREBASE ENV VARIABLES:");
+  console.log("FIREBASE_PROJECT_ID:", process.env.FIREBASE_PROJECT_ID);
+  console.log("FIREBASE_PRIVATE_KEY_ID:", process.env.FIREBASE_PRIVATE_KEY_ID);
+  console.log("FIREBASE_CLIENT_EMAIL:", process.env.FIREBASE_CLIENT_EMAIL);
+  console.log(
+    "FIREBASE_PRIVATE_KEY:",
+    process.env.FIREBASE_PRIVATE_KEY ? "Exists" : "Missing"
   );
 
   // Validate required fields
